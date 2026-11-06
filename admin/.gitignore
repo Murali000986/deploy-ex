@@ -6,3 +6,6 @@ out
 *.log
 .vercel
 next-env.d.ts
+
+# Manually-created requests persisted by lib/mock-data.ts — runtime state, not source.
+data/requests.json

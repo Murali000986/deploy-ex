@@ -1,4 +1,5 @@
 import { getServerSession } from "next-auth";
+import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { PageHeader } from "@/components/shell/page-header";
 import { MetricCard } from "@/components/metric-card";
@@ -21,7 +22,11 @@ export default async function SpicePage() {
         description={role === "SUPERADMIN"
           ? "All incorporation requests across admins and workflow stages."
           : "Requests assigned to you plus any unassigned items you can pick up."}
-        actions={<Button><Plus className="h-3.5 w-3.5" /> New request</Button>}
+        actions={
+          <Button asChild>
+            <Link href="/spice/new"><Plus className="h-3.5 w-3.5" /> New request</Link>
+          </Button>
+        }
       />
 
       <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">

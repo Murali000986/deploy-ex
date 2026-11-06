@@ -42,6 +42,17 @@ const STAGE_FOR_FORM: Record<string, string> = {
   aoc4_offline: "FORM_READY_AOC4_OFFLINE",
 };
 
+// ClientRequest.formType is stored as the admin's own enum ("SPICE_PART_A", "AOC4", ...);
+// the extension queries with its own lowercase form ids. Without this map every
+// formType-tagged request would fail the comparison below and never be returned.
+const QUERY_TO_STORED_FORM_TYPE: Record<string, string> = {
+  spice_a: "SPICE_PART_A",
+  inc32: "INC32",
+  dir3: "DIR3_KYC",
+  aoc4: "AOC4",
+  aoc4_offline: "AOC4_OFFLINE",
+};
+
 export async function GET(req: NextRequest) {
   const payload = await verifyExtToken(req);
   if (!payload) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -54,11 +65,12 @@ export async function GET(req: NextRequest) {
   const targetStage = STAGE_FOR_FORM[formType];
 
   const all = requestsForUser(payload.role, payload.name);
+  const wantedStoredFormType = QUERY_TO_STORED_FORM_TYPE[formType];
   const drafts = all
     .filter(r => {
       // Prefer explicit formType match, otherwise fall back to legacy stage match (SPICe+ Part A)
       const anyR = r as unknown as { formType?: string };
-      if (anyR.formType) return anyR.formType === formType;
+      if (anyR.formType) return anyR.formType === wantedStoredFormType;
       return r.currentStage === targetStage;
     })
     .map(r => ({

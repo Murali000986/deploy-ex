@@ -1,7 +1,35 @@
+import fs from "fs";
+import path from "path";
 import type { ClientRequest, FormType, UserAccount } from "./types";
 
 const now = Date.now();
 const iso = (minutesAgo: number) => new Date(now - minutesAgo * 60_000).toISOString();
+
+// Manually-created requests (from the admin "New request" form) are persisted here so
+// they survive a dev-server reload. On Railway this resets on redeploy/restart unless
+// a volume is mounted at admin/data — fine for MVP testing, see DEPLOY_RAILWAY.md.
+const DATA_FILE = path.join(process.cwd(), "data", "requests.json");
+
+function loadPersistedRequests(): ClientRequest[] | null {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      return JSON.parse(fs.readFileSync(DATA_FILE, "utf8")) as ClientRequest[];
+    }
+  } catch (err) {
+    console.warn("[mock-data] failed to load persisted requests:", (err as Error).message);
+  }
+  return null;
+}
+
+function persistRequests() {
+  try {
+    const dir = path.dirname(DATA_FILE);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(REQUESTS, null, 2), "utf8");
+  } catch (err) {
+    console.error("[mock-data] failed to persist requests:", (err as Error).message);
+  }
+}
 
 export const USERS: (UserAccount & { passwordHash: string })[] = [
   { id: "u_super", name: "Superadmin", email: "superadmin@ledgerly.in", role: "SUPERADMIN", active: true, lastLoginAt: iso(60), passwordHash: "plain:super123" },
@@ -10,7 +38,7 @@ export const USERS: (UserAccount & { passwordHash: string })[] = [
   { id: "u_admin3", name: "Anita Shah", email: "anita@ledgerly.in", role: "ADMIN", active: false, lastLoginAt: iso(60 * 24 * 20), passwordHash: "plain:admin123" },
 ];
 
-export const REQUESTS: ClientRequest[] = [
+const SEED_REQUESTS: ClientRequest[] = [
   {
     id: "REQ-2041",
     clientName: "Ramesh Iyer",
@@ -203,6 +231,8 @@ export const REQUESTS: ClientRequest[] = [
   },
 ];
 
+export const REQUESTS: ClientRequest[] = loadPersistedRequests() ?? SEED_REQUESTS;
+
 export function requestsForUser(role: "ADMIN" | "SUPERADMIN", name: string) {
   if (role === "SUPERADMIN") return REQUESTS;
   return REQUESTS.filter(r => r.assignedAdmin === name || !r.assignedAdmin);
@@ -210,6 +240,84 @@ export function requestsForUser(role: "ADMIN" | "SUPERADMIN", name: string) {
 
 export function findRequest(id: string) {
   return REQUESTS.find(r => r.id === id) ?? FORM_REQUESTS.find(r => r.id === id);
+}
+
+const COMPANY_TYPE_LABEL: Record<ClientRequest["companyType"], string> = {
+  PRIVATE_LIMITED: "Private Limited",
+  OPC: "One Person Company",
+  LLP: "LLP",
+  PUBLIC_LIMITED: "Public Limited",
+};
+
+export type CreateSpiceRequestInput = {
+  clientName: string;
+  clientPhone: string;
+  clientEmail?: string;
+  companyType: ClientRequest["companyType"];
+  proposedNames: string[];
+  nicCode?: string;
+  businessActivity?: string;
+  trademarkNumber?: string;
+  llpin?: string;
+  cin?: string;
+  language?: string;
+  requestType?: string;
+  comments?: string;
+  assignedAdmin?: string;
+};
+
+/** Create a SPICe+ Part A request directly in the READY_FOR_PART_A stage, from
+ *  manual data entry in the admin UI — this is what the extension's drafts
+ *  endpoint picks up. */
+export function createSpiceRequest(input: CreateSpiceRequestInput): ClientRequest {
+  const id = "SPA-" + Math.random().toString(36).slice(2, 8).toUpperCase();
+  const nowIso = new Date().toISOString();
+  const record: ClientRequest = {
+    id,
+    clientName: input.clientName,
+    clientPhone: input.clientPhone,
+    clientEmail: input.clientEmail,
+    companyType: input.companyType,
+    proposedNames: input.proposedNames
+      .map(name => name.trim())
+      .filter(Boolean)
+      .map(name => ({ name, verdict: "NO_MATCH" as const })),
+    currentStage: "READY_FOR_PART_A",
+    stageHistory: [{ stage: "READY_FOR_PART_A", enteredAt: nowIso }],
+    assignedAdmin: input.assignedAdmin,
+    blockingIssues: [],
+    nextAction: "Send to extension",
+    lastActivityAt: nowIso,
+    createdAt: nowIso,
+    validation: [],
+    submittedFields: {
+      "Company type": COMPANY_TYPE_LABEL[input.companyType] ?? input.companyType,
+      "NIC code": input.nicCode ?? "",
+      "Business activity": input.businessActivity ?? "",
+      "Trademark number": input.trademarkNumber ?? "",
+      "LLPIN": input.llpin ?? "",
+      "CIN": input.cin ?? "",
+      "Language": input.language ?? "",
+      "Request type": input.requestType ?? "",
+      "Comments": input.comments ?? "",
+    },
+    conversation: [],
+    audit: [{ id: "a1", at: nowIso, actor: input.assignedAdmin ?? "manual-entry", action: "Request created manually in admin" }],
+    handledBy: "HUMAN",
+    formType: "SPICE_PART_A",
+  };
+  REQUESTS.push(record);
+  persistRequests();
+  return record;
+}
+
+/** Patch an existing request (e.g. fixing a field before sending to the extension). */
+export function updateRequestFields(id: string, patch: Partial<ClientRequest>): ClientRequest | null {
+  const idx = REQUESTS.findIndex(r => r.id === id);
+  if (idx === -1) return null;
+  REQUESTS[idx] = { ...REQUESTS[idx], ...patch, lastActivityAt: new Date().toISOString() };
+  persistRequests();
+  return REQUESTS[idx];
 }
 
 // -----------------------------------------------------------------------------
