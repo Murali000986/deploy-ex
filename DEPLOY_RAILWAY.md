@@ -41,13 +41,15 @@ Set these in each service's **Variables** tab — never in a committed file. Tem
   need those features — manual data entry doesn't need them
 - Everything else in `backend/.env.example` can stay at its default for MVP testing
 
-## 3. Known limitation: backend storage is not persistent
+## 3. Known limitation: storage is not persistent across redeploys
 
-`backend/src/models/db.js` reads/writes a single JSON file (`backend/data/ledgerly_db.json`) and
-`backend/uploads/documents/` on local disk. Railway's default filesystem is ephemeral — both reset on
-every redeploy/restart. That's fine for short MVP test sessions; if you need data to survive restarts,
-add a Railway Volume mounted at `backend/data` and `backend/uploads` (Settings → Volumes), or swap the
-JSON file for a real database later.
+Both `backend/src/models/db.js` (`backend/data/ledgerly_db.json` + `backend/uploads/documents/`) and
+`admin/lib/mock-data.ts` (`admin/data/requests.json`, used by the "New request" form below) read/write
+a plain JSON file on local disk. Railway's default filesystem is ephemeral — these reset on every
+redeploy/restart, though they survive fine across requests within one running deploy. That's fine for
+a single MVP test session; if you need data to survive restarts, add a Railway Volume mounted at
+`backend/data`, `backend/uploads` and `admin/data` (Settings → Volumes), or swap the JSON files for a
+real database later.
 
 ## 4. Point the extension at the deployed admin
 
@@ -65,10 +67,18 @@ Once `admin/`'s Railway URL is live:
 1. Sign in to the deployed admin dashboard. Demo accounts are in
    [`admin/lib/mock-data.ts`](admin/lib/mock-data.ts) (e.g. `superadmin@ledgerly.in` / `super123`) —
    replace these before this is anything but a private MVP test.
-2. Enter/approve a client draft in admin.
-3. Open the extension popup on an `mca.gov.in` form tab, pull the draft (token exchange via
-   `admin/app/api/extension/token` + `/drafts`), and click fill.
+2. Go to **SPICe+ Requests → New request** (`/spice/new`), fill in the client's details (company type,
+   proposed names, NIC code, business activity, etc.) and submit. This creates the request directly in
+   `READY_FOR_PART_A`, which is the one stage the extension's drafts endpoint currently serves —
+   nothing else runs AI validation or name screening on it.
+3. Open the extension popup on an `mca.gov.in` SPICe+ Part A form tab, pull the draft (token exchange
+   via `admin/app/api/extension/token` + `/drafts`), and click fill.
 4. Check the popup's result summary / Activity log for what filled, what was skipped, and why.
+
+Only the SPICe+ Part A path is wired end-to-end this way. The AOC-4 / AOC-4 Offline / INC-32 / DIR-3
+KYC pages under `/forms/*` are still review-only scaffolding over seeded demo data — the "Forms" hub
+doesn't yet have create forms or feed the extension's AOC-4 automation (`page-automation.js` /
+`phase-runner.js`), which is a materially bigger lift than SPICe+ Part A.
 
 ## Security notes
 
