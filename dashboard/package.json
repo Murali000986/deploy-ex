@@ -1,0 +1,14 @@
+{
+  "name": "aoc4-autofiller",
+  "private": true,
+  "version": "1.5.0",
+  "description": "AOC-4 Studio dashboard and extraction/reconciliation engine. Plain Node, no build step.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "import:classification": "node scripts/import-classification.js"
+  },
+  "devDependencies": {
+    "pdfjs-dist": "^4.7.76"
+  }
+}

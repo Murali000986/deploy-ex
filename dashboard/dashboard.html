@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>AOC-4 Studio</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Ctext x='16' y='21.5' font-family='Segoe UI,Arial' font-size='12' font-weight='700' fill='white' text-anchor='middle'%3EG8%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+<div class="shell">
+  <!-- ═══ Sidebar ═══ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-row">
+        <span class="mark">G8</span>
+        <div>
+          <h1>AOC-4 Studio</h1>
+          <div class="firm">Germin8 Advisors · Jain S A K &amp; Co.</div>
+        </div>
+      </div>
+      <select class="sel" id="formSwitch" style="margin-top:10px" onchange="setForm(this.value)">
+        <option value="aoc4_online" selected>AOC-4 Online</option>
+        <option value="aoc4_offline">AOC-4 Offline</option>
+        <option value="spice">SPICe+ Part A (Name Reservation)</option>
+        <option value="adt1">ADT-1 (Auditor Appointment)</option>
+      </select>
+    </div>
+
+    <div class="client-box" id="clientBoxAoc4">
+      <div class="label-row">
+        <label for="clientSelect">Client</label>
+        <span class="pill" id="clientBadge">Draft</span>
+      </div>
+      <select class="sel" id="clientSelect"><option value="">New client</option></select>
+      <div class="row mt8">
+        <button class="btn sm" id="newClientBtn" title="Start a new client">+ New</button>
+        <button class="btn sm" id="importJsonBtn" title="Load an existing client JSON into the form">Import</button>
+        <button class="btn sm" id="sampleBtn" title="Load the Lessonboard FY 2025-26 sample">Sample</button>
+        <input type="file" id="importJsonInput" accept="application/json" hidden>
+      </div>
+    </div>
+
+    <div class="client-box hidden" id="clientBoxSpiceA">
+      <div class="label-row">
+        <label>Client</label>
+        <span class="pill" id="spFormBadge">Draft</span>
+      </div>
+      <div class="row">
+        <button class="btn sm" id="spNewBtn" title="Start a new name reservation">+ New</button>
+        <button class="btn sm" id="spImportJsonBtn" title="Load a SPICe+ Part A client JSON into the form">Import</button>
+        <input type="file" id="spImportJsonInput" accept="application/json" hidden>
+      </div>
+    </div>
+
+    <div class="client-box hidden" id="clientBoxAdt1">
+      <div class="label-row">
+        <label for="adClientSelect">Client</label>
+        <span class="pill" id="adFormBadge">Draft</span>
+      </div>
+      <select class="sel" id="adClientSelect" title="Your saved ADT-1 clients (kept in this browser)"><option value="">New client</option></select>
+      <div class="row mt8">
+        <button class="btn sm" id="adNewBtn" title="Start a new ADT-1 client">+ New</button>
+        <button class="btn sm" id="adImportJsonBtn" title="Load an ADT-1 client JSON into the form">Import</button>
+        <button class="btn sm" id="adSampleBtn" title="Load a complete sample that fills ADT-1 phases 1 and 2 (placeholders marked SAMPLE)">Sample</button>
+        <input type="file" id="adImportJsonInput" accept="application/json" hidden>
+      </div>
+      <div class="row mt8">
+        <button class="btn sm" id="adDupBtn" title="Copy this client for the next filing (dates, resolution and SRNs are cleared)">Duplicate</button>
+        <button class="btn sm danger" id="adDelBtn" title="Delete this saved client from this browser">Delete</button>
+      </div>
+    </div>
+
+    <nav class="nav" id="navAoc4">
+      <button data-panel="data" class="active">
+        <span class="step">1</span><span class="nav-label">Data Entry</span><span class="count" id="cnt-data"></span>
+      </button>
+      <button data-panel="sandbox">
+        <span class="step">2</span><span class="nav-label">Filesure lookup</span><span class="count" id="cnt-sandbox"></span>
+      </button>
+      <button data-panel="upload">
+        <span class="step">3</span><span class="nav-label">Upload &amp; AI</span><span class="count" id="cnt-upload"></span>
+      </button>
+      <button data-panel="review">
+        <span class="step">4</span><span class="nav-label">Review &amp; Send</span><span class="count" id="cnt-review"></span>
+      </button>
+    </nav>
+
+    <nav class="nav hidden" id="navSpiceA">
+      <button data-panel="data-spice" class="active">
+        <span class="step">1</span><span class="nav-label">Data Entry</span><span class="count" id="sp-cnt-data"></span>
+      </button>
+      <button data-panel="sandbox-spice">
+        <span class="step">2</span><span class="nav-label">Filesure lookup</span>
+      </button>
+      <button data-panel="upload-spice">
+        <span class="step">3</span><span class="nav-label">Upload &amp; AI</span>
+      </button>
+      <button data-panel="review-spice">
+        <span class="step">4</span><span class="nav-label">Review &amp; Send</span><span class="count" id="sp-cnt-review"></span>
+      </button>
+    </nav>
+
+    <nav class="nav hidden" id="navAdt1">
+      <button data-panel="data-adt1" class="active">
+        <span class="step">1</span><span class="nav-label">Data Entry</span><span class="count" id="ad-cnt-data"></span>
+      </button>
+      <button data-panel="upload-adt1">
+        <span class="step">2</span><span class="nav-label">Upload &amp; AI</span><span class="count" id="ad-cnt-upload"></span>
+      </button>
+      <button data-panel="review-adt1">
+        <span class="step">3</span><span class="nav-label">Review &amp; Send</span><span class="count" id="ad-cnt-review"></span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <button id="adminBtn" class="hidden">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Users &amp; roles
+      </button>
+      <button id="settingsBtn">
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings &amp; API keys
+      </button>
+      <div class="row mt8" style="justify-content:space-between;align-items:center">
+        <span class="hint" id="whoAmI"></span>
+        <button class="btn sm" id="logoutBtn" type="button">Log out</button>
+      </div>
+      <div class="save-state" id="saveState" aria-live="polite">Not saved yet</div>
+    </div>
+  </aside>
+
+  <!-- ═══ Main ═══ -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title">
+        <h2 id="panelTitle">Data Entry</h2>
+        <p id="panelSub">Fill what you know; dependent values are derived automatically.</p>
+      </div>
+      <div class="actions">
+        <span class="company-tag" id="companyTag"></span>
+        <span class="pill" id="topStatus" aria-live="polite"></span>
+        <button class="btn primary" id="topReviewBtn">Review &amp; Send</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- ─── Panel 1: Data entry ─── -->
+      <section class="panel active" id="panel-data">
+        <div class="section-bar">
+          <div class="section-tabs" id="sectionTabs">
+            <button data-target="sec-company" class="on"><span class="dot"></span>Company</button>
+            <button data-target="sec-dates"><span class="dot"></span>Dates &amp; AGM</button>
+            <button data-target="sec-signatories"><span class="dot"></span>Signatories</button>
+            <button data-target="sec-auditor"><span class="dot"></span>Auditor</button>
+            <button data-target="sec-industry"><span class="dot"></span>Industry</button>
+            <button data-target="sec-bs"><span class="dot"></span>Balance sheet</button>
+            <button data-target="sec-pl"><span class="dot"></span>Profit &amp; loss</button>
+            <button data-target="sec-sc"><span class="dot"></span>Share capital</button>
+            <button data-target="sec-advanced"><span class="dot"></span>Advanced</button>
+          </div>
+          <div class="field-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/></svg>
+            <input id="fieldSearch" type="search" placeholder="Search fields…  Ctrl K" aria-label="Search fields">
+          </div>
+        </div>
+
+        <div class="workbench">
+          <div id="dataSections" class="form-col"></div>
+
+          <aside class="rail" aria-label="Client summary">
+            <div class="rail-card">
+              <div class="rail-head">
+                <span>Client summary</span>
+                <span class="pill" id="railState">Draft</span>
+              </div>
+              <div class="progress"><div id="completenessBar"></div></div>
+              <div class="rail-meta"><span id="completenessText">0 of 0 fields</span><span id="completenessPct">0%</span></div>
+              <dl class="stats">
+                <div><dt>Paid-up capital</dt><dd id="sumPaidUp">—</dd></div>
+                <div><dt>Net worth</dt><dd id="sumNetWorth">—</dd></div>
+                <div><dt>Total assets</dt><dd id="sumAssets">—</dd></div>
+                <div><dt>Profit after tax</dt><dd id="sumPat">—</dd></div>
+                <div><dt>EPS (basic)</dt><dd id="sumEps">—</dd></div>
+              </dl>
+              <div class="rail-issues" id="railIssues"></div>
+              <button class="btn primary w100" id="railReviewBtn">Review &amp; Send</button>
+            </div>
+            <div class="rail-card rail-tip">
+              <strong>Quick keys</strong>
+              <p><kbd>Ctrl</kbd> + <kbd>K</kbd> searches every field. <kbd>Alt</kbd> + <kbd>1–4</kbd> switches steps. <kbd>Ctrl</kbd> + <kbd>S</kbd> saves a draft.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ─── Panel 2: Company lookup (Filesure) ─── -->
+      <section class="panel" id="panel-sandbox">
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Find the company</h3><p>MCA master data through Filesure</p></div>
+            <span class="pill accent">Filesure</span>
+          </div>
+          <div class="card-body">
+            <div class="seg mb12">
+              <button class="active" data-mode="cin">By CIN</button>
+              <button data-mode="name">By company name</button>
+            </div>
+            <div id="sbByCin" class="grid">
+              <div class="f span2">
+                <label for="sbCin">Corporate Identity Number (CIN)</label>
+                <input class="in" id="sbCin" maxlength="21" placeholder="e.g. U80904KA2018PTC119370" style="text-transform:uppercase">
+                <span class="hint">21 characters: L/U + 5 digits + 2 letters + 4 digits + 3 letters + 6 digits</span>
+              </div>
+              <div class="f"><label>&nbsp;</label><button class="btn primary" id="sbFetchBtn" disabled>Fetch company data</button></div>
+            </div>
+            <div id="sbByName" class="hidden">
+              <div class="grid">
+                <div class="f span2">
+                  <label for="sbName">Company name</label>
+                  <input class="in" id="sbName" placeholder="at least 3 characters, e.g. LESSONBOARD">
+                </div>
+                <div class="f"><label>&nbsp;</label><button class="btn primary" id="sbSearchBtn">Search</button></div>
+              </div>
+              <div class="results hidden" id="sbResults"></div>
+            </div>
+            <div class="f mt12 hidden" id="savedCompanyWrap">
+              <label for="savedCompanies">Previously looked-up companies <span class="hint">cached, no API call</span></label>
+              <select class="sel" id="savedCompanies"><option value="">Select…</option></select>
+            </div>
+            <div id="sbStatus" class="mt12"></div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="sbResultBlock">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Company master data</h3><p>Filled straight into Data Entry</p></div>
+            <span class="badge sandbox">from Filesure</span>
+          </div>
+          <div class="card-body">
+            <dl class="kv" id="sbKv"></dl>
+            <div class="note ok mt12" id="sbApplied"></div>
+            <div class="btn-row mt12">
+              <button class="btn primary" data-go="data">Continue to Data Entry</button>
+              <button class="btn" id="sbServerAddrBtn">Use registered office as server address (12b)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Filesure API test console: one row per endpoint, each showing exactly what it returns ─── -->
+        <div class="card" id="filesureConsoleCard">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Filesure API test console</h3><p>Try each endpoint on its own and see exactly what data comes back, before wiring anything into the form</p></div>
+            <span class="pill warn">Some calls cost money per call</span>
+          </div>
+          <div class="card-body">
+            <div class="note warn" id="filesureConsoleNote"></div>
+            <div class="grid mb12">
+              <div class="f"><label for="fcCin">CIN</label><input class="in" id="fcCin" placeholder="e.g. U80904KA2018PTC119370" style="text-transform:uppercase"></div>
+              <div class="f"><label for="fcDin">DIN</label><input class="in" id="fcDin" placeholder="e.g. 08302207"></div>
+              <div class="f"><label for="fcQ">Search text (for the "resolve" rows)</label><input class="in" id="fcQ" placeholder="e.g. company or director name"></div>
+            </div>
+            <div class="scroll-x"><table class="tbl compact" id="filesureEndpointTable"></table></div>
+
+            <details class="subblock mt12">
+              <summary>Try any route name directly (no code change needed)</summary>
+              <div class="note mt8">Paste a route name someone gives you and test it immediately. Body params below are read as JSON — e.g. <code>{"cin": "U80904KA2018PTC119370"}</code>.</div>
+              <div class="grid mt8">
+                <div class="f span2"><label for="fcCustomRoute">Route name</label><input class="in" id="fcCustomRoute" placeholder="e.g. filesure-freshness"></div>
+                <div class="f"><label>&nbsp;</label><button class="btn primary" id="fcCustomCallBtn">Call</button></div>
+              </div>
+              <div class="f mt8"><label for="fcCustomBody">Body params (JSON)</label><textarea class="ta" id="fcCustomBody" rows="2" placeholder='{"cin": "U80904KA2018PTC119370"}'></textarea></div>
+            </details>
+
+            <div id="filesureConsoleResult" class="mt12"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Panel 3: Upload & AI ─── -->
+      <section class="panel" id="panel-upload">
+        <div class="stepper" id="docSteps">
+          <div class="step on" data-step="1"><span>1</span>Upload documents</div>
+          <div class="step" data-step="2"><span>2</span>Extract</div>
+          <div class="step" data-step="3"><span>3</span>Review</div>
+          <div class="step" data-step="4"><span>4</span>Apply to form</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading">
+              <h3>Documents</h3>
+              <p>Financial statements (PDF or Excel), last year's filed AOC-4, board's or auditor's report, Word, text</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="drop" id="dropZone" role="button" tabindex="0" aria-label="Upload documents">
+              <svg class="ico lg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Drop files here or <strong>browse</strong></div>
+              <div class="hint">PDF · XLSX · XLS · CSV · DOCX · TXT · client JSON · PNG/JPG (images need Claude) — up to 25 MB each</div>
+              <input type="file" id="fileInput" multiple accept=".pdf,.xlsx,.xls,.xlsm,.csv,.txt,.json,.docx,.png,.jpg,.jpeg" hidden>
+            </div>
+            <div id="fileList" class="files"></div>
+            <details class="subblock mt12">
+              <summary>Attachments MCA will ask for when filing AOC-4</summary>
+              <ul class="req-list" id="reqList"></ul>
+            </details>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Extract values</h3><p id="aiProviderTag"></p></div>
+          </div>
+          <div class="card-body">
+            <div class="note" id="extractNote">The app reads the documents itself (statement tables, signatures, last year's form). With an AI key saved in Settings it also asks the model and shows where the two agree. Nothing is written into the form until you apply it in the review below.</div>
+            <div class="btn-row">
+              <button class="btn primary" id="extractBtn" disabled>Extract values</button>
+              <label class="chk toggle"><input type="checkbox" id="useAi" checked> Also ask the AI model</label>
+              <span class="muted" id="extractStatus"></span>
+            </div>
+            <div id="docNotes" class="mt12"></div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="reviewBlock">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Review extracted values</h3><p id="aiDiffTitle">Nothing is applied until you choose it</p></div>
+          </div>
+          <div class="card-body">
+            <div class="chips mb12" id="proposalChips"></div>
+            <div class="table-tools">
+              <div class="seg" id="proposalFilter"><button data-f="all" class="on">All</button><button data-f="changes">Changes</button><button data-f="conflicts">Conflicts</button><button data-f="low">Low confidence</button></div>
+              <button class="btn sm" id="aiSelectAll">Select all</button>
+              <button class="btn sm" id="aiSelectHigh">Select confident</button>
+              <button class="btn sm" id="aiSelectNone">Select none</button>
+              <button class="btn sm primary" id="aiApply" style="margin-left:auto">Apply selected to the form</button>
+            </div>
+            <div class="scroll-x"><table class="tbl compact proposals" id="aiDiffTable"></table></div>
+            <div id="applyResult" class="mt12"></div>
+          </div>
+        </div>
+
+        <!-- ─── Reconciliation workspace: Overview / Financial Summary / Data Comparison / Validation Centre / Source Evidence / Review & Approval ─── -->
+        <div class="card hidden" id="engineWorkspace">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Reconciliation workspace</h3><p>Deterministic checks on what the documents say, independent of what's in the form</p></div>
+          </div>
+          <div class="card-body">
+            <div class="seg mb12" id="workspaceTabs">
+              <button data-wtab="overview" class="active">Overview</button>
+              <button data-wtab="financials">Financial Summary</button>
+              <button data-wtab="comparison">Data Comparison</button>
+              <button data-wtab="validation">Validation Centre</button>
+              <button data-wtab="evidence">Source Evidence</button>
+              <button data-wtab="approval">Review &amp; Approval</button>
+            </div>
+
+            <div class="wpanel active" id="wpanel-overview"></div>
+
+            <div class="wpanel" id="wpanel-financials"></div>
+
+            <div class="wpanel" id="wpanel-comparison">
+              <div class="table-tools">
+                <div class="seg" id="comparisonFilter">
+                  <button data-cf="all" class="on">All</button>
+                  <button data-cf="issues">Issues only</button>
+                  <button data-cf="MATCHED">Matched</button>
+                  <button data-cf="MISMATCH">Mismatch</button>
+                  <button data-cf="MISSING_IN_DASHBOARD">Missing in dashboard</button>
+                  <button data-cf="MISSING_IN_DOCUMENT">Missing in document</button>
+                  <button data-cf="NOT_COMPARABLE">Not comparable</button>
+                </div>
+                <input class="in sm" id="comparisonSearch" placeholder="Search field or path…" style="max-width:220px">
+                <button class="btn sm" id="comparisonExport" style="margin-left:auto">Export CSV</button>
+              </div>
+              <div class="scroll-x"><table class="tbl compact" id="comparisonTable"></table></div>
+            </div>
+
+            <div class="wpanel" id="wpanel-validation">
+              <div class="chips mb12" id="validationChips"></div>
+              <div id="validationList"></div>
+            </div>
+
+            <div class="wpanel" id="wpanel-evidence">
+              <div class="f mb12"><label for="evidenceField">Field</label>
+                <select class="sel" id="evidenceField"></select>
+              </div>
+              <div id="evidenceDetail"></div>
+            </div>
+
+            <div class="wpanel" id="wpanel-approval">
+              <div class="chips mb12" id="approvalChips"></div>
+              <div class="scroll-x"><table class="tbl compact" id="approvalTable"></table></div>
+              <details class="subblock mt12">
+                <summary>Audit trail</summary>
+                <div class="scroll-x"><table class="tbl compact" id="auditTable"></table></div>
+                <button class="btn sm mt8" id="auditExport">Export audit trail (JSON)</button>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Panel 4: Review & Send ─── -->
+      <section class="panel" id="panel-review">
+        <div id="readiness"></div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Checks</h3><p>Errors block sending; warnings do not</p></div>
+            <span class="pill" id="issueSummary"></span>
+          </div>
+          <div class="card-body"><ul class="issues" id="issueList"></ul></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Where the values came from</h3><p>Every field keeps its source</p></div>
+          </div>
+          <div class="card-body"><div class="chips" id="sourceChips"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Client JSON</h3><p>Exactly what the extension receives</p></div>
+            <span class="btn-row">
+              <button class="btn sm" id="jsonEditToggle">Edit as text</button>
+              <button class="btn sm" id="jsonCopy">Copy</button>
+            </span>
+          </div>
+          <div class="card-body">
+            <pre class="json" id="jsonPreview"></pre>
+            <div id="jsonEditWrap" class="hidden">
+              <textarea class="ta json" id="jsonEditor" aria-label="Client JSON editor"></textarea>
+              <div class="btn-row mt8"><button class="btn primary sm" id="jsonApply">Apply to form</button><button class="btn sm" id="jsonCancel">Cancel</button></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="aoc4OfflineExtra">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Fill into MCA's Offline Excel template</h3><p>For the AOC-4, EAUDITOR and EDIRECTOR workbooks MCA generates for this specific filing</p></div>
+            <span class="pill warn">Coming soon</span>
+          </div>
+          <div class="card-body">
+            <div class="note warn">Not built yet — MCA rejects any Excel that isn't the exact one it generated for this company's filing, so this needs a real downloaded template to build and test against safely. Until then, use <strong>Send to extension</strong> below for the webform portion that's common to both Online and Offline (company details, dates, signatories, auditor), then continue the rest of this filing on MCA by downloading and filling the Excel yourself.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Approve and send to the extension</h3><p>The client is stored in Chrome instantly — no file to import</p></div>
+          </div>
+          <div class="card-body">
+            <div class="grid">
+              <div class="f"><label for="reviewer">Reviewer</label><input class="in" id="reviewer" placeholder="Your name"></div>
+              <div class="f span2"><label for="reviewNotes">Notes (optional)</label><input class="in" id="reviewNotes" placeholder="Remarks about this filing"></div>
+            </div>
+            <div class="btn-row mt16">
+              <button class="btn primary" id="sendBtn">Send to extension</button>
+              <button class="btn" id="downloadBtn">Download client JSON</button>
+              <button class="btn" id="downloadExcelBtn">Download Excel with AOC-4 sheets</button>
+              <button class="btn" id="draftBtn">Save draft</button>
+            </div>
+            <div id="sendResult" class="mt12"></div>
+            <ol class="send-steps mt16">
+              <li><strong>Send to extension</strong> stores the client in the extension directly. It needs the extension id (and pairing key, once you've generated one) in Settings and this page opened over <code>http://localhost</code>. Errors in <em>Checks</em> must be cleared first.</li>
+              <li>No connection? Use <strong>Download client JSON</strong>, then the extension popup → <strong>Import JSON…</strong> → pick the file.</li>
+              <li>Open the AOC-4 Online form on MCA, select the client in the popup and click <strong>Load &amp; Fill All Phases</strong>. The fill runs in its own window.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SPICe+ Part A: Data entry ─── -->
+      <section class="panel" id="panel-data-spice">
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Company &amp; filing type</h3><p>Instruction Kit §3.1 — Field No. 1(a)</p></div>
+          </div>
+          <div class="card-body">
+            <div class="grid">
+              <div class="f span2">
+                <label for="spTypeOfCompany">Type of company</label>
+                <select class="sel" id="spTypeOfCompany">
+                  <option value="">Select…</option>
+                  <option value="new_company">New Company</option>
+                  <option value="part1_company">Part I Company</option>
+                  <option value="producer_company">Producer Company</option>
+                  <option value="section8_company">Section 8 Company</option>
+                  <option value="ifsc_company">IFSC Company</option>
+                  <option value="part1_llp_to_company">Part I LLP to Company</option>
+                </select>
+                <span class="hint">MCA's exact dropdown wording may differ slightly — the extension matches it loosely.</span>
+              </div>
+              <div class="f span2">
+                <label for="spLlpin">LLPIN <span class="hint">required only for "Part I LLP to Company"</span></label>
+                <input class="in" id="spLlpin" maxlength="8" placeholder="e.g. AAA-1234" style="text-transform:uppercase">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Industry classification (NIC codes)</h3><p>Up to three five-digit NIC 2008 codes; the first is primary and feeds the CIN</p></div>
+          </div>
+          <div class="card-body">
+            <div class="grid">
+              <div class="f"><label for="spNic1">NIC code 1 (primary) *</label><input class="in" id="spNic1" maxlength="5" placeholder="e.g. 62013"></div>
+              <div class="f span3"><label for="spNicDesc1">Description</label><input class="in" id="spNicDesc1" placeholder="e.g. Computer programming activities"></div>
+              <div class="f"><label for="spNic2">NIC code 2</label><input class="in" id="spNic2" maxlength="5"></div>
+              <div class="f span3"><label for="spNicDesc2">Description</label><input class="in" id="spNicDesc2"></div>
+              <div class="f"><label for="spNic3">NIC code 3</label><input class="in" id="spNic3" maxlength="5"></div>
+              <div class="f span3"><label for="spNicDesc3">Description</label><input class="in" id="spNicDesc3"></div>
+              <div class="f span4">
+                <label for="spMainSubclass">Main sub-class of industrial activity <span class="hint">auto — edit to override</span></label>
+                <input class="in" id="spMainSubclass" placeholder="Derived from the descriptions above">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Proposed company name</h3><p>At least one name is mandatory; a second is optional</p></div>
+          </div>
+          <div class="card-body">
+            <div class="grid">
+              <div class="f span4">
+                <label for="spSuffixCategory">Company type (for the name-suffix check below)</label>
+                <select class="sel" id="spSuffixCategory"><option value="">Select…</option></select>
+              </div>
+              <div class="f span4">
+                <label for="spName1">Proposed name 1 * <span class="hint" id="spName1Count">0 / 75</span></label>
+                <input class="in" id="spName1" maxlength="75" placeholder="e.g. ABC Private Limited">
+                <div id="spName1Msgs" class="mt8"></div>
+              </div>
+              <div class="f span4">
+                <label for="spName2">Proposed name 2 <span class="hint" id="spName2Count">0 / 75</span></label>
+                <input class="in" id="spName2" maxlength="75" placeholder="e.g. ABC Technologies Private Limited">
+                <div id="spName2Msgs" class="mt8"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ─── SPICe+ Part A: Filesure lookup ─── -->
+      <section class="panel" id="panel-sandbox-spice">
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Find the company</h3><p>For a name-change filing on an existing CIN, or a Part I LLP conversion — optional, a fresh name reservation needs no existing CIN</p></div>
+            <span class="pill accent">Filesure</span>
+          </div>
+          <div class="card-body">
+            <div class="grid">
+              <div class="f span2">
+                <label for="spSbCin">Corporate Identity Number (CIN)</label>
+                <input class="in" id="spSbCin" maxlength="21" placeholder="e.g. U80904KA2018PTC119370" style="text-transform:uppercase">
+                <span class="hint">21 characters: L/U + 5 digits + 2 letters + 4 digits + 3 letters + 6 digits</span>
+              </div>
+              <div class="f"><label>&nbsp;</label><button class="btn primary" id="spSbFetchBtn" disabled>Fetch company data</button></div>
+            </div>
+            <div class="f mt12 hidden" id="spSavedCompanyWrap">
+              <label for="spSavedCompanies">Previously looked-up companies <span class="hint">cached, no API call</span></label>
+              <select class="sel" id="spSavedCompanies"><option value="">Select…</option></select>
+            </div>
+            <div id="spSbStatus" class="mt12"></div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="spSbResultBlock">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Company master data</h3><p>Filled straight into Data Entry</p></div>
+            <span class="badge sandbox">from Filesure</span>
+          </div>
+          <div class="card-body">
+            <dl class="kv" id="spSbKv"></dl>
+            <div class="note ok mt12" id="spSbApplied"></div>
+            <div class="btn-row mt12"><button class="btn primary" data-go="data-spice">Continue to Data Entry</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SPICe+ Part A: Upload & AI ─── -->
+      <section class="panel" id="panel-upload-spice">
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Documents</h3><p>Optional — a draft board resolution, object clause, or an earlier company record</p></div>
+          </div>
+          <div class="card-body">
+            <div class="drop" id="spDropZone" role="button" tabindex="0" aria-label="Upload optional attachments">
+              <svg class="ico lg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Drop files here or <strong>browse</strong></div>
+              <div class="hint">PDF or JPG, up to 2 MB each, up to 5 files</div>
+              <input type="file" id="spFileInput" multiple accept=".pdf,.jpg,.jpeg" hidden>
+            </div>
+            <div id="spFileList" class="files"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Extract values</h3><p>Coming soon</p></div>
+            <span class="pill warn">Coming soon</span>
+          </div>
+          <div class="card-body">
+            <div class="note warn">AI-assisted extraction for SPICe+ Part A (pulling a company type, NIC codes or proposed name out of an uploaded document) isn't built yet — a name reservation has little in common with AOC-4's financial statements, so it needs its own rules. For now, files you drop above are kept as optional attachments on the client record (see Review &amp; Send) and the extension does not attach them to the MCA page automatically.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SPICe+ Part A: Review & Send ─── -->
+      <section class="panel" id="panel-review-spice">
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Checks</h3><p>Errors block sending; warnings do not</p></div>
+            <span class="pill" id="spIssueSummary"></span>
+          </div>
+          <div class="card-body"><ul class="issues" id="spIssueList"></ul></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Client JSON</h3><p>Exactly what the extension receives</p></div>
+            <button class="btn sm" id="spJsonCopy">Copy</button>
+          </div>
+          <div class="card-body"><pre class="json" id="spJsonPreview"></pre></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Approve and send to the extension</h3><p>Submit on MCA is never automated — review there before you submit</p></div>
+          </div>
+          <div class="card-body">
+            <div class="btn-row">
+              <button class="btn primary" id="spSendBtn">Send to extension</button>
+              <button class="btn" id="spDownloadBtn">Download client JSON</button>
+              <button class="btn" id="spDownloadAttachmentsBtn">Download attachments</button>
+              <button class="btn" id="spDraftBtn">Save draft</button>
+            </div>
+            <div id="spSendResult" class="mt12"></div>
+            <ol class="send-steps mt16">
+              <li><strong>Send to extension</strong> stores the client directly, using the extension id saved in Settings → Extension. No connection? Use <strong>Download client JSON</strong>, then the extension popup → <strong>Import JSON…</strong>.</li>
+              <li>Open SPICe+ Part A on MCA, choose <strong>SPICe+ Part A (Name Reservation)</strong> as the Form, pick the client and click <strong>Load &amp; Fill SPICe+ Part A</strong>.</li>
+              <li>Attach any optional documents yourself, review the page, run Auto Check (the extension can do this too), then click <strong>Submit</strong> yourself.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── ADT-1: Data entry (cards are generated by js/adt1-form.js) ─── -->
+      <section class="panel" id="panel-data-adt1">
+        <p class="ad-intro">Enter the appointment once here, then <strong>Review &amp; Send</strong> hands it to the extension, which fills ADT-1 on MCA for you. Sections appear and disappear with your answers; a hidden section is not sent. Everything saves automatically in this browser.</p>
+        <div class="ad-sticky" id="adProgress" aria-label="Progress"></div>
+        <div class="card ad-scenario" id="adScenario"></div>
+        <div class="card ad-prof" id="adProfiles"></div>
+        <div class="card ad-missing" id="adMissing"></div>
+        <div id="adt1Cards"></div>
+      </section>
+
+      <!-- ─── ADT-1: Upload & AI (js/adt1-upload.js, js/adt1-extractor.js) ─── -->
+      <section class="panel" id="panel-upload-adt1">
+        <div class="stepper" id="au1Steps">
+          <div class="step on" data-step="1"><span>1</span>Upload documents</div>
+          <div class="step" data-step="2"><span>2</span>Extract</div>
+          <div class="step" data-step="3"><span>3</span>Review</div>
+          <div class="step" data-step="4"><span>4</span>Apply to form</div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading">
+              <h3>Documents</h3>
+              <p>Board resolution, auditor's consent, appointment letter, AGM notice or resolution, or an ADT-1 filed earlier</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="drop" id="au1Drop" role="button" tabindex="0" aria-label="Upload ADT-1 documents">
+              <svg class="ico lg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div>Drop files here or <strong>browse</strong></div>
+              <div class="hint">PDF · DOCX · TXT · PNG/JPG (scanned, needs the AI) · ADT-1 client JSON — up to 25 MB each</div>
+              <input type="file" id="au1Input" multiple accept=".pdf,.docx,.txt,.json,.png,.jpg,.jpeg" hidden>
+            </div>
+            <div id="au1Files" class="files"></div>
+            <div class="note mt12">Your documents stay in this browser. They are only sent out if the AI option below is switched on, and then only the text of the documents (plus scanned pages if you tick that box) goes to the AI provider saved in Settings.</div>
+            <details class="subblock mt12">
+              <summary>Attachments MCA will ask for in ADT-1</summary>
+              <ul class="req-list" id="au1Req"></ul>
+              <p class="hint mt8">The extension does not upload files: you attach them yourself on MCA.</p>
+            </details>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Extract values</h3><p id="au1Provider"></p></div>
+          </div>
+          <div class="card-body">
+            <div class="note">The app reads the documents itself and shows its answer straight away. With an AI key saved in Settings it also asks the AI model in the background and adds that answer when it arrives. Only what a document actually states is proposed, and nothing goes into the form until you apply it below.</div>
+            <div class="btn-row">
+              <button class="btn primary" id="au1Extract" disabled>Extract values</button>
+              <label class="chk toggle"><input type="checkbox" id="au1UseAi" checked> Also ask the AI model</label>
+              <label class="chk toggle"><input type="checkbox" id="au1Scanned"> Also read scanned pages and images with the AI (slower)</label>
+              <span class="muted" id="au1Status"></span>
+            </div>
+            <div id="au1Notes" class="mt12"></div>
+          </div>
+        </div>
+
+        <div class="card hidden" id="au1Review">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Review extracted values</h3><p id="au1Title">Nothing is applied until you choose it</p></div>
+          </div>
+          <div class="card-body">
+            <div id="au1AiBanner" class="mb12"></div>
+            <div class="chips mb12" id="au1Chips"></div>
+            <div class="table-tools">
+              <div class="seg" id="au1Filter"><button data-f="all" class="on">All</button><button data-f="changes">Changes</button><button data-f="conflicts">Conflicts</button><button data-f="low">Low confidence</button></div>
+              <button class="btn sm" id="au1SelHigh">Accept all high-confidence</button>
+              <button class="btn sm" id="au1SelNone">Select none</button>
+              <button class="btn sm primary" id="au1Apply" style="margin-left:auto">Apply selected to the form</button>
+            </div>
+            <div class="scroll-x"><table class="tbl compact proposals" id="au1Table"></table></div>
+            <div id="au1Result" class="mt12"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── ADT-1: Review & Send ─── -->
+      <section class="panel" id="panel-review-adt1">
+        <div class="card ad-review-head">
+          <div class="card-body">
+            <p class="ad-review-kicker">This filing</p>
+            <h3 class="ad-review-title" id="adReviewHeadline"></h3>
+            <div class="ad-prog" id="adReviewProgress"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Checks</h3><p>Errors block sending; notes do not. Click "Go to field" to fix one.</p></div>
+            <span class="pill" id="adIssueSummary"></span>
+          </div>
+          <div class="card-body"><ul class="issues ad-issues" id="adIssueList"></ul></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>What the extension will fill in</h3><p>Section by section, exactly what will be typed into MCA. Click Edit to change a value.</p></div>
+          </div>
+          <div class="card-body" id="adFillTable"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Client JSON</h3><p>The same data in the format the extension receives. Most people never need this.</p></div>
+            <button class="btn sm" id="adJsonCopy">Copy</button>
+          </div>
+          <div class="card-body">
+            <details class="subblock ad-json">
+              <summary><span><svg class="chev" viewBox="0 0 24 24" style="stroke:currentColor;fill:none;stroke-width:2"><polyline points="9 18 15 12 9 6"/></svg><span class="block-title">Show the raw JSON</span></span><span class="block-meta">form type, client and flat form data</span></summary>
+              <div class="block-body"><pre class="json" id="adJsonPreview"></pre></div>
+            </details>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head" style="cursor:default">
+            <div class="card-heading"><h3>Approve and send to the extension</h3><p>Submit on MCA is never automated — review there before you submit</p></div>
+          </div>
+          <div class="card-body">
+            <div class="note warn">The extension answers the Yes/No questions on the MCA <strong>Appointment and Auditor Details</strong> step (3(a), 3(c), 4(k), 5) only from the values you choose here — it never guesses an answer. Anything required and still unanswered after filling is listed in the extension; answer it on MCA before the step is saved. If you leave Area / Locality blank the extension picks the first locality MCA lists for the pin code and asks you to check it.</div>
+            <div class="grid mt12">
+              <div class="f span2">
+                <label for="adExtId">Extension ID <span class="hint">chrome://extensions → Germin8 → ID</span></label>
+                <input class="in" id="adExtId" maxlength="32" spellcheck="false" autocomplete="off" placeholder="32 letters, a–p" style="font-family:monospace">
+                <span class="hint" id="adExtIdMsg"></span>
+              </div>
+              <div class="f span2">
+                <label for="adPairKey">Pairing key <span class="hint">only if you set one in the extension</span></label>
+                <input class="in" id="adPairKey" type="password" spellcheck="false" autocomplete="off" placeholder="optional">
+              </div>
+            </div>
+            <div class="btn-row mt12">
+              <button class="btn primary" id="adSendBtn">Send to extension</button>
+              <button class="btn hidden" id="adSendForceBtn" title="Send even though some checks still show errors; the extension lists whatever MCA still needs">Send anyway</button>
+              <button class="btn" id="adTestBtn">Test connection</button>
+              <button class="btn" id="adDraftBtn">Save draft</button>
+            </div>
+            <div class="btn-row mt8">
+              <button class="btn" id="adImportBtn">Import JSON file</button>
+              <button class="btn" id="adPasteBtn">Paste JSON</button>
+              <button class="btn" id="adDownloadBtn">Export JSON file</button>
+              <button class="btn" id="adCopyBtn2">Copy JSON</button>
+              <input type="file" id="adImportJsonInput2" accept="application/json,.json" hidden>
+            </div>
+            <div class="f mt12 hidden" id="adPasteWrap">
+              <label for="adPasteText">Paste ADT-1 JSON <span class="hint">the exported file, or just the formData</span></label>
+              <textarea class="ta" id="adPasteText" rows="8" spellcheck="false"></textarea>
+              <div class="btn-row mt8"><button class="btn primary" id="adPasteLoad">Load into the form</button></div>
+            </div>
+            <div id="adSendResult" class="mt12"></div>
+            <ol class="send-steps mt16">
+              <li><strong>Send to extension</strong> stores the client directly, using the Extension ID (and pairing key, if any) typed above; it is remembered for next time. <strong>Test connection</strong> checks it first. No connection? Use <strong>Export JSON file</strong>, then the extension side panel → <strong>Import JSON…</strong> (it accepts this file as is).</li>
+              <li>Open <strong>ADT-1</strong> on MCA (logged in), choose <strong>ADT-1</strong> as the Form in the popup and pick the client.</li>
+              <li>Click <strong>Fill ADT-1</strong>: Phase 1 enters the CIN, waits for MCA to autofill the company and clicks Next; Phase 2 fills the Appointment and Auditor Details step and clicks that step's Save. The Declaration step and <strong>Submit</strong> are left to you.</li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footbar">
+      <span id="footLeft">Values save automatically in this browser.</span>
+      <span class="btn-row">
+        <button class="btn sm" id="prevPanel">← Back</button>
+        <button class="btn sm primary" id="nextPanel">Next →</button>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="mh" id="settingsTitle">Settings &amp; API keys <button class="btn sm" id="settingsClose">Close</button></div>
+    <div class="mb">
+      <div class="settings-tabs" id="settingsTabs">
+        <button data-stab="sandbox" class="on">Company data</button>
+        <button data-stab="ai">AI extraction</button>
+        <button data-stab="extension">Extension</button>
+        <button data-stab="firm">My firm</button>
+      </div>
+
+      <div class="settings-pane on" data-pane="sandbox">
+        <div class="note">Company master-data lookups (CIN → name, address, capital, directors) go through Filesure via the Gateway — set the Gateway URL and Token under the <strong>AI extraction</strong> tab. No separate key is needed here.</div>
+      </div>
+
+      <div class="settings-pane" data-pane="ai">
+        <div class="note">Used to read scanned PDFs and where the local extractor is unsure. Optional.</div>
+        <div class="grid">
+          <div class="f"><label for="setLlmProvider">Provider</label>
+            <select class="sel" id="setLlmProvider"><option value="anthropic">Anthropic (Claude)</option><option value="openai">OpenAI (GPT)</option><option value="gemini">Google (Gemini)</option><option value="gateway">Germin8 Gateway (centralized)</option></select></div>
+          <div class="f span2"><label for="setLlmKey">API key <span class="hint">for Anthropic / OpenAI / Gemini</span></label><input class="in" id="setLlmKey" type="password" autocomplete="new-password"></div>
+        </div>
+        <h4 class="mt16">Germin8 Gateway <span class="hint" style="text-transform:none;font-weight:400">— routes Claude calls and Filesure company lookups through the firm's gateway instead of raw provider keys</span></h4>
+        <div class="note">Only the gateway's own token sits in this browser; the real Claude and Filesure keys stay on the server. Get the URL and token from Sumit.</div>
+        <div class="grid">
+          <div class="f span2"><label for="setGatewayUrl">Gateway URL</label><input class="in" id="setGatewayUrl" placeholder="https://…supabase.co/functions/v1/api-gateway" autocomplete="off"></div>
+          <div class="f span2"><label for="setGatewayToken">Gateway Token</label><input class="in" id="setGatewayToken" type="password" autocomplete="new-password"></div>
+        </div>
+      </div>
+
+      <div class="settings-pane" data-pane="extension">
+        <div class="note">With the extension id saved, <em>Review &amp; Send</em> hands the client straight to the AOC-4 Auto Filler — no file to download and import.</div>
+        <div class="grid">
+          <div class="f span2">
+            <label for="setExtId">Extension ID</label>
+            <input class="in" id="setExtId" placeholder="e.g. abcdefghijklmnopabcdefghijklmnop" autocomplete="off">
+            <span class="hint">Copy it from <code>chrome://extensions</code> with Developer mode on. The dashboard must be opened over <code>http://localhost</code>.</span>
+          </div>
+          <div class="f"><label>&nbsp;</label><button class="btn" id="setExtTest">Test connection</button></div>
+          <div class="f span2"><span class="hint" id="setExtStatus"></span></div>
+        </div>
+        <h4 class="mt16">Pairing keys</h4>
+        <div class="note">Generate a key, paste it into the extension popup's Account section, then use <strong>Test connection</strong> above or <strong>Send to extension</strong> in Review &amp; Send to confirm it arrives. Keys are tied to your account; an admin can see and revoke everyone's.</div>
+        <div class="row mt8">
+          <input class="in" id="newKeyLabel" placeholder="Label (e.g. this laptop)" style="flex:1">
+          <button class="btn sm primary" id="genPairingKey" type="button">Generate new key</button>
+        </div>
+        <div class="scroll-x mt12"><table class="tbl compact" id="keysTable"></table></div>
+        <div class="f span2 mt12">
+          <label for="setPairingKey">Active key <span class="hint">sent with every message to the extension</span></label>
+          <div class="row">
+            <select class="sel" id="setPairingKey" style="flex:1"></select>
+            <button class="btn sm" id="copyPairingKey" type="button">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-pane" data-pane="firm">
+        <div class="note">Saved once, then applied with one click in Data Entry → Auditor.</div>
+        <div class="grid" id="firmGrid"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn primary" id="settingsSave">Save settings</button></div>
+  </div>
+</div>
+
+<!-- Admin modal: users & roles -->
+<div class="overlay" id="adminOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+    <div class="mh" id="adminTitle"><div>Users &amp; roles<span class="mh-sub">Who can access this dashboard, and what they can do</span></div><button class="btn sm" id="adminClose">Close</button></div>
+    <div class="mb">
+      <div class="settings-tabs" id="adminTabs">
+        <button data-atab="users" class="on">Users</button>
+        <button data-atab="roles">Roles</button>
+      </div>
+
+      <div class="admin-pane on" data-apane="users">
+        <div class="note">Create one account per person. Each account's role decides what they can see and do, including whether they can generate pairing keys.</div>
+        <div class="card-head" style="cursor:default;padding:0;margin:12px 0 8px">
+          <div class="card-heading"><h3 style="font-size:13px">New user</h3></div>
+        </div>
+        <div class="grid">
+          <div class="f"><label for="newUserName">Username</label><input class="in" id="newUserName" autocomplete="off"></div>
+          <div class="f"><label for="newUserPass">Password <span class="hint">min. 8 characters</span></label><input class="in" id="newUserPass" type="password" autocomplete="new-password"></div>
+          <div class="f"><label for="newUserRole">Role</label><select class="sel" id="newUserRole"></select></div>
+          <div class="f"><label>&nbsp;</label><button class="btn primary" id="createUserBtn" type="button">Create user</button></div>
+        </div>
+        <div class="scroll-x mt16"><table class="tbl compact" id="usersTable"></table></div>
+        <div class="note mt12">To reset your own or anyone's password, type a new one next to their name and click Reset.</div>
+      </div>
+
+      <div class="admin-pane" data-apane="roles">
+        <div class="note">Super Admin and Staff are built in and cannot be edited. Add a custom role and tick what it can do.</div>
+        <div class="grid">
+          <div class="f span2"><label for="newRoleName">New role name</label><input class="in" id="newRoleName" placeholder="e.g. Reviewer"></div>
+        </div>
+        <div id="newRolePerms" class="mt8"></div>
+        <div class="btn-row mt12"><button class="btn primary" id="createRoleBtn" type="button">Create role</button></div>
+        <div id="rolesList" class="mt16"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="libs/pdf.min.js"></script>
+<script src="js/extractor.js"></script>
+<script src="js/chunk-resilience.js"></script>
+<script src="js/reconciliation.js"></script>
+<script src="js/comparison.js"></script>
+<script src="js/field-records.js"></script>
+<script src="js/review-store.js"></script>
+<script src="js/issue-store.js"></script>
+<script src="js/spice-a-shared.js"></script>
+<script src="js/adt1-form.js"></script>
+<script src="js/adt1-extractor.js"></script>
+<script src="js/adt1-upload.js"></script>
+<script src="config.local.js" onerror="window.__aoc4NoLocalConfig = 1"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>

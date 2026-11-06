@@ -1,22 +1,22 @@
-# Ignore large PDF library worker (binary, not needed in source control)
-libs/pdf.worker.js
-libs/pdf.worker.min.js
-libs/pdf.min.js
+# Local credentials (template: dashboard/config.local.example.js)
+**/config.local.js
 
-# Local machine settings: holds live API credentials (template: config.local.example.js)
-config.local.js
+# Real client data — never commit client data
+**/clients/
 
-# Dependencies
+# Local login/pairing-key database
+dashboard/data/app.db
+dashboard/data/app.db-journal
+dashboard/data/app.db-wal
+dashboard/data/app.db-shm
+
+# Large PDF.js binaries (not needed in source control)
+**/libs/pdf.min.js
+**/libs/pdf.worker.js
+**/libs/pdf.worker.min.js
+
+# Dependencies / tooling
 node_modules/
-
-# Next.js build
-.next/
-
-# Environment files
-.env.local
-.env
-
-# Claude Code
 .claude/
 
 # Logs
@@ -25,5 +25,3 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
-
-admin/tsconfig.tsbuildinfo
