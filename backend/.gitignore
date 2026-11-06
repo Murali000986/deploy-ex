@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+
+# Runtime state — generated on first write, never committed (contains client/case data)
+data/*.json
+!data/.gitkeep
+
+# Uploaded client documents (PII — PAN, Aadhaar, financials)
+uploads/documents/*
+!uploads/documents/.gitkeep

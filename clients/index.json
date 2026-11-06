@@ -1,0 +1,24 @@
+{
+  "firm": "Germin8 Advisors / Jain S A K & Co.",
+  "clients": [
+    {
+      "id": "lessonboard_fy2024_25",
+      "name": "Lessonboard Edu Solutions Private Limited (FY 2024-25)",
+      "fy": "2024-25",
+      "file": "clients/lessonboard_fy2024_25.json"
+    },
+    {
+      "id": "lessonboard_fy2025_26",
+      "name": "Lessonboard Edu Solutions Private Limited (FY 2025-26)",
+      "fy": "2025-26",
+      "file": "clients/lessonboard_fy2025_26.json"
+    },
+    {
+      "id": "lessonboard_fy2025_26_offline",
+      "name": "Lessonboard Edu Solutions Private Limited (FY 2025-26)",
+      "fy": "2025-26",
+      "formType": "aoc4_offline",
+      "file": "clients/lessonboard_fy2025_26_offline.json"
+    }
+  ]
+}

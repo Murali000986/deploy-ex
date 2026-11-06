@@ -1,0 +1,18 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-10-27",
+  "note": "Runtime uses js/field-mapper.js. This JSON is a reference snapshot.",
+  "fields": [
+    {
+      "id": "1a_cin",
+      "label": "Corporate Identity Number (CIN)",
+      "pdfField": "CIN",
+      "formSelector": "input[aria-label*='Corporate'], input[placeholder*='CIN']",
+      "type": "text",
+      "required": true,
+      "maxLength": 21,
+      "pdfPattern": "\\b([LUF][0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6})\\b",
+      "validationRegex": "^[A-Z0-9]{21}$"
+    }
+  ]
+}

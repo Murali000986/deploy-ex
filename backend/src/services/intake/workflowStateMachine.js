@@ -1,0 +1,139 @@
+import { db } from '../../models/db.js';
+
+export const CASE_STATES = {
+  NEW: 'NEW',
+  DOCUMENTS_PENDING: 'DOCUMENTS_PENDING',
+  PROCESSING: 'PROCESSING',
+  CLIENT_CONFIRMATION: 'CLIENT_CONFIRMATION',
+  NAME_REVIEW: 'NAME_REVIEW',
+  ADMIN_REVIEW: 'ADMIN_REVIEW',
+  READY_FOR_EXTENSION: 'READY_FOR_EXTENSION',
+  NEEDS_CORRECTION: 'NEEDS_CORRECTION',
+  MANUAL_REVIEW: 'MANUAL_REVIEW',
+  FAILED_RETRYABLE: 'FAILED_RETRYABLE',
+  CANCELLED: 'CANCELLED'
+};
+
+// Valid state machine transitions
+const ALLOWED_TRANSITIONS = {
+  [CASE_STATES.NEW]: [
+    CASE_STATES.DOCUMENTS_PENDING,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.DOCUMENTS_PENDING]: [
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.FAILED_RETRYABLE,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.PROCESSING]: [
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.NAME_REVIEW,
+    CASE_STATES.ADMIN_REVIEW,
+    CASE_STATES.NEEDS_CORRECTION,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.FAILED_RETRYABLE,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.CLIENT_CONFIRMATION]: [
+    CASE_STATES.NAME_REVIEW,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.NEEDS_CORRECTION,
+    CASE_STATES.DOCUMENTS_PENDING,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.FAILED_RETRYABLE,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.NEEDS_CORRECTION]: [
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.DOCUMENTS_PENDING,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.NAME_REVIEW]: [
+    CASE_STATES.ADMIN_REVIEW,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.NEEDS_CORRECTION,
+    CASE_STATES.FAILED_RETRYABLE,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.ADMIN_REVIEW]: [
+    CASE_STATES.READY_FOR_EXTENSION,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.NEEDS_CORRECTION,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.FAILED_RETRYABLE,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.MANUAL_REVIEW]: [
+    CASE_STATES.DOCUMENTS_PENDING,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.NAME_REVIEW,
+    CASE_STATES.ADMIN_REVIEW,
+    CASE_STATES.READY_FOR_EXTENSION,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.FAILED_RETRYABLE]: [
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION,
+    CASE_STATES.DOCUMENTS_PENDING,
+    CASE_STATES.MANUAL_REVIEW,
+    CASE_STATES.CANCELLED
+  ],
+  [CASE_STATES.READY_FOR_EXTENSION]: [
+    CASE_STATES.ADMIN_REVIEW,
+    CASE_STATES.PROCESSING,
+    CASE_STATES.CLIENT_CONFIRMATION
+  ],
+  [CASE_STATES.CANCELLED]: []
+};
+
+export class WorkflowStateMachine {
+  static canTransition(fromState, toState) {
+    const allowed = ALLOWED_TRANSITIONS[fromState] || [];
+    return allowed.includes(toState);
+  }
+
+  static transition(caseId, toState, actorId = 'SYSTEM', actorRole = 'SYSTEM', reason = '') {
+    const caseRecord = db.getCaseById(caseId);
+    if (!caseRecord) {
+      throw new Error(`Case ${caseId} not found`);
+    }
+
+    const fromState = caseRecord.status;
+    if (fromState === toState) {
+      return caseRecord; // No-op
+    }
+
+    if (!this.canTransition(fromState, toState)) {
+      throw new Error(
+        `Invalid state transition: Cannot change case state from '${fromState}' to '${toState}'`
+      );
+    }
+
+    const updated = db.updateCase(caseId, { status: toState });
+
+    db.addAuditLog({
+      caseId,
+      actorId,
+      actorRole,
+      action: 'CASE_STATE_CHANGED',
+      details: {
+        from: fromState,
+        to: toState,
+        reason: reason || `Automated transition to ${toState}`
+      }
+    });
+
+    console.log(`[State Machine] Case ${caseRecord.case_number}: ${fromState} -> ${toState}`);
+    return updated;
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "manifest_version": 3,
+  "name": "Germin8",
+  "version": "1.4.0",
+  "description": "Germin8 MCA Auto Filler — Pick a form (AOC-4, AOC-4 Offline, SPICe+ Part A, INC-32, DIR-3 KYC), pick a client, click Fill — the MCA form auto-populates.",
+  "minimum_chrome_version": "114",
+  "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
+  "host_permissions": ["https://www.mca.gov.in/*", "https://*.mca.gov.in/*"],
+  "action": {
+    "default_title": "Open Germin8"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.mca.gov.in/*",
+        "https://*.mca.gov.in/*"
+      ],
+      "js": [
+        "js/field-maps/_shared.js",
+        "js/field-maps/aoc4.js",
+        "js/field-maps/aoc4-offline.js",
+        "js/field-maps/spice-a.js",
+        "js/field-maps/inc32.js",
+        "js/field-maps/dir3.js",
+        "js/forms-registry.js",
+        "js/filler.js",
+        "content_script.js"
+      ],
+      "run_at": "document_idle",
+      "world": "ISOLATED"
+    }
+  ],
+  "background": { "service_worker": "background.js" },
+  "externally_connectable": {
+    "matches": [
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ]
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "libs/pdf.min.js",
+        "libs/pdf.worker.min.js",
+        "clients/*.json",
+        "data/err-catalog.json"
+      ],
+      "matches": [
+        "https://www.mca.gov.in/*",
+        "https://*.mca.gov.in/*"
+      ]
+    }
+  ]
+}

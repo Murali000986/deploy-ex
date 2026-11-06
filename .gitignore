@@ -1,0 +1,29 @@
+# Ignore large PDF library worker (binary, not needed in source control)
+libs/pdf.worker.js
+libs/pdf.worker.min.js
+libs/pdf.min.js
+
+# Local machine settings: holds live API credentials (template: config.local.example.js)
+config.local.js
+
+# Dependencies
+node_modules/
+
+# Next.js build
+.next/
+
+# Environment files
+.env.local
+.env
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+admin/tsconfig.tsbuildinfo
