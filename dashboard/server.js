@@ -247,4 +247,7 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1', () => console.log(`AOC-4 Dashboard: http://127.0.0.1:${PORT}/dashboard.html`));
+// Bound to 127.0.0.1 only in the real local-dev checkout, on purpose (local-only tool).
+// This deploy copy binds to all interfaces so Railway's proxy can actually reach it.
+const HOST = process.env.HOST || '0.0.0.0';
+server.listen(PORT, HOST, () => console.log(`AOC-4 Dashboard listening on ${HOST}:${PORT}`));
